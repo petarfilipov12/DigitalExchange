@@ -1,0 +1,19 @@
+networks:
+  redis_network:
+    external: true
+    driver: bridge
+    
+  postgreSQL_network:
+    external: true
+    driver: bridge
+
+services:
+  rest_server_marketdata:
+    build: .
+    container_name: rest_server_marketdata
+    networks:
+      - redis_network
+      - postgreSQL_network
+    ports:
+      - 8889:8080
+      

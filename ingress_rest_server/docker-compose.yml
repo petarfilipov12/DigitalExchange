@@ -1,0 +1,19 @@
+networks:
+  me_network:
+    external: true
+    driver: bridge
+
+services:
+  ingress_rest_server:
+    build: .
+    container_name: ingress_rest_server
+    shm_size: "500mb"
+    environment:
+      ME_CLUSTER_ADDRESSES: "me_node0,me_node1,me_node2"
+      ME_CLUSTER_PORT_BASE: "9000"
+    networks:
+      - me_network
+    ports:
+      - 8888:8080
+      - 19000:29000
+      

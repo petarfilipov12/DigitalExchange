@@ -1,0 +1,60 @@
+networks:
+  me_network:
+    external: true
+    driver: bridge
+
+  redis_network:
+    external: true
+    driver: bridge
+  
+  postgreSQL_network:
+    external: true
+    driver: bridge
+
+services:
+  egress_hub_node0:
+    build: .
+    container_name: egress_hub_node0
+    shm_size: "1gb"
+    ports:
+      - 18888:8000
+    networks:
+      - me_network
+      - redis_network
+      - postgreSQL_network
+    environment:
+      CLUSTER_ADDRESSES: "egress_hub_node0,egress_hub_node1,egress_hub_node2"
+      CLUSTER_PORT_BASE: "9000"
+      CLUSTER_NODE: "0"
+      ME_CLUSTER_ADDRESSES: "me_node0,me_node1,me_node2"
+      ME_CLUSTER_PORT_BASE: "9000"
+      
+  egress_hub_node1:
+    build: .
+    container_name: egress_hub_node1
+    shm_size: "1gb"
+    networks:
+      - me_network
+      - redis_network
+      - postgreSQL_network
+    environment:
+      CLUSTER_ADDRESSES: "egress_hub_node0,egress_hub_node1,egress_hub_node2"
+      CLUSTER_PORT_BASE: "9000"
+      CLUSTER_NODE: "1"
+      ME_CLUSTER_ADDRESSES: "me_node0,me_node1,me_node2"
+      ME_CLUSTER_PORT_BASE: "9000"
+      
+  egress_hub_node2:
+    build: .
+    container_name: egress_hub_node2
+    shm_size: "1gb"
+    networks:
+      - me_network
+      - redis_network
+      - postgreSQL_network
+    environment:
+      CLUSTER_ADDRESSES: "egress_hub_node0,egress_hub_node1,egress_hub_node2"
+      CLUSTER_PORT_BASE: "9000"
+      CLUSTER_NODE: "2"
+      ME_CLUSTER_ADDRESSES: "me_node0,me_node1,me_node2"
+      ME_CLUSTER_PORT_BASE: "9000"

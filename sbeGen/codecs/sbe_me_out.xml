@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+		   xmlns:xi="http://www.w3.org/2001/XInclude"
+                   package="digital.exchange.sbe.me.output"
+                   id="102"
+                   version="1"
+                   semanticVersion="1"
+                   description="Message Codecs for ME output events">
+                   
+    <xi:include href="common_types.xml"/>
+    <xi:include href="common_types_exchange.xml"/>
+    
+    <types>
+        
+    </types>
+    
+    <sbe:message name="ClockUpdateEvent"
+                 id="1"
+                 description="Clock update">
+        <field name="seqNum" id="1" type="int64"/>
+        <field name="timestamp" id="2" type="int64"/>
+    </sbe:message>
+    
+    <sbe:message name="AddedPairMatchingEngineEvent"
+                 id="2"
+                 description="Added Pair Matching Engine Event">
+        <field name="seqNum" id="1" type="int64"/>
+        <field name="timestamp" id="2" type="int64"/>
+        <field name="base" id="3" type="SymbolString"/>
+        <field name="quote" id="4" type="SymbolString"/>
+    </sbe:message>
+    
+    <sbe:message name="RemovedPairMatchingEngineEvent"
+                 id="3"
+                 description="Removed Pair Matching Engine Event">
+        <field name="seqNum" id="1" type="int64"/>
+        <field name="timestamp" id="2" type="int64"/>
+        <field name="base" id="3" type="SymbolString"/>
+        <field name="quote" id="4" type="SymbolString"/>
+    </sbe:message>
+
+    <sbe:message name="MakerOrderCanceledEvent"
+                 id="4"
+                 description="Maker Order Canceled Event">
+        <field name="seqNum" id="1" type="int64"/>
+        <field name="timestamp" id="2" type="int64"/>
+        <field name="makerOrder" id="3" type="order"/>
+    </sbe:message>
+
+    <sbe:message name="MakerOrderAddedEvent"
+                 id="5"
+                 description="Maker Order Added Event">
+        <field name="seqNum" id="1" type="int64"/>
+        <field name="timestamp" id="2" type="int64"/>
+        <field name="makerOrder" id="3" type="order"/>
+    </sbe:message>
+    
+    <sbe:message name="OrderFillEvent"
+                 id="6"
+                 description="Order Fill Event">
+        <field name="seqNum" id="1" type="int64"/>
+        <field name="timestamp" id="2" type="int64"/>
+        <field name="base" id="3" type="SymbolString"/>
+        <field name="quote" id="4" type="SymbolString"/>
+        <field name="fillPrice" id="5" type="int64"/>
+        <field name="fillQty" id="6" type="int64"/>
+        <field name="takerOrder" id="7" type="order"/>
+        <field name="makerOrder" id="8" type="order"/>
+    </sbe:message>
+    
+    <sbe:message name="AddedAccountEvent"
+                 id="7"
+                 description="Added Account Event">
+        <field name="seqNum" id="1" type="int64"/>
+        <field name="timestamp" id="2" type="int64"/>
+        <field name="accountId" id="3" type="int64"/>
+    </sbe:message>
+    
+    <sbe:message name="RemovedAccountEvent"
+                 id="8"
+                 description="Removed Account Event">
+        <field name="seqNum" id="1" type="int64"/>
+        <field name="timestamp" id="2" type="int64"/>
+        <field name="accountId" id="3" type="int64"/>
+    </sbe:message>
+    
+    <sbe:message name="DepositEvent"
+                 id="9"
+                 description="Add Account">
+        <field name="seqNum" id="1" type="int64"/>
+        <field name="timestamp" id="2" type="int64"/>
+        <field name="accountId" id="3" type="int64"/>
+        <field name="symbol" id="4" type="SymbolString"/>
+        <field name="qty" id="5" type="int64"/>
+    </sbe:message>
+    
+    <sbe:message name="WithdrawEvent"
+                 id="10"
+                 description="Remove Account">
+	<field name="seqNum" id="1" type="int64"/>
+	<field name="timestamp" id="2" type="int64"/>
+        <field name="accountId" id="3" type="int64"/>
+        <field name="symbol" id="4" type="SymbolString"/>
+        <field name="qty" id="5" type="int64"/>
+    </sbe:message>
+
+</sbe:messageSchema>

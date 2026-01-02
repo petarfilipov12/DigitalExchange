@@ -1,0 +1,15 @@
+curl -X POST http://localhost:8889/order_book \
+	-H "Content-Type: application/json" \
+	-d '{"base": "BTC", "quote": "USDC", "depth": 10}'
+
+curl -X POST http://localhost:8889/trades \
+	-H "Content-Type: application/json" \
+	-d '{"base": "BTC", "quote": "USDC", "limit": 10}'
+
+curl -X POST http://localhost:8889/candles \
+	-H "Content-Type: application/json" \
+	-d '{"base": "BTC", "quote": "USDC", "interval": "1m", "limit": 10}'
+	
+curl -X POST http://localhost:8889/account_balance \
+	-H "Content-Type: application/json" \
+	-d '{"accountId": 1}'

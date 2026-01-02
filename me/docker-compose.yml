@@ -1,0 +1,41 @@
+networks:
+  me_network:
+    external: true
+    driver: bridge
+
+services:
+  me_node0:
+    build: .
+    container_name: me_node0
+    shm_size: "1gb"
+    ports:
+      - 18000:8000
+    networks:
+      - me_network
+    environment:
+      CLUSTER_ADDRESSES: "me_node0,me_node1,me_node2"
+      CLUSTER_PORT_BASE: "9000"
+      CLUSTER_NODE: "0"
+      
+  me_node1:
+    build: .
+    container_name: me_node1
+    shm_size: "1gb"
+    networks:
+      - me_network
+    environment:
+      CLUSTER_ADDRESSES: "me_node0,me_node1,me_node2"
+      CLUSTER_PORT_BASE: "9000"
+      CLUSTER_NODE: "1"
+      
+  me_node2:
+    build: .
+    container_name: me_node2
+    shm_size: "1gb"
+    networks:
+      - me_network
+    environment:
+      CLUSTER_ADDRESSES: "me_node0,me_node1,me_node2"
+      CLUSTER_PORT_BASE: "9000"
+      CLUSTER_NODE: "2"
+      

@@ -1,0 +1,99 @@
+networks:
+  redis_cluster:
+    driver: bridge
+
+services:
+  redis_node_1:
+    image: redis:8.2.0
+    container_name: redis_node_1
+    command: ["redis-server", "/conf/redis.conf", "--cluster-announce-ip redis_node_1"]
+    networks:
+      - redis_cluster
+    volumes:
+      - ./redis_node:/conf
+
+  redis_node_2:
+    image: redis:8.2.0
+    container_name: redis_node_2
+    command: ["redis-server", "/conf/redis.conf", "--cluster-announce-ip redis_node_2"]
+    networks:
+      - redis_cluster
+    volumes:
+      - ./redis_node:/conf
+
+  redis_node_3:
+    image: redis:8.2.0
+    container_name: redis_node_3
+    command: ["redis-server", "/conf/redis.conf", "--cluster-announce-ip redis_node_3"]
+    networks:
+      - redis_cluster
+    volumes:
+      - ./redis_node:/conf
+
+  redis_node_4:
+    image: redis:8.2.0
+    container_name: redis_node_4
+    command: ["redis-server", "/conf/redis.conf", "--cluster-announce-ip redis_node_4"]
+    networks:
+      - redis_cluster
+    volumes:
+      - ./redis_node:/conf
+  
+  redis_node_5:
+    image: redis:8.2.0
+    container_name: redis_node_5
+    command: ["redis-server", "/conf/redis.conf", "--cluster-announce-ip redis_node_5"]
+    networks:
+      - redis_cluster
+    volumes:
+      - ./redis_node:/conf
+  
+  redis_node_6:
+    image: redis:8.2.0
+    container_name: redis_node_6
+    command: ["redis-server", "/conf/redis.conf", "--cluster-announce-ip redis_node_6"]
+    networks:
+      - redis_cluster
+    volumes:
+      - ./redis_node:/conf
+
+  redis_cluster_creator:
+    image: redis:8.2.0
+    depends_on:
+      - redis_node_1
+      - redis_node_2
+      - redis_node_3
+      - redis_node_4
+      - redis_node_5
+      - redis_node_6
+    networks:
+      - redis_cluster
+    entrypoint: [
+      "sh", "-c",
+      "sleep 5 && redis-cli --cluster create \
+        redis_node_1:6379 \
+        redis_node_2:6379 \
+        redis_node_3:6379 \
+        redis_node_4:6379 \
+        redis_node_5:6379 \
+        redis_node_6:6379 \
+        --cluster-replicas 1 --cluster-yes"
+    ]
+
+  redis_client:
+    build: ./redis_client
+    container_name: redis_client
+    networks:
+      - redis_cluster
+    depends_on:
+      - redis_cluster_creator
+  
+  redis_ui:
+    image: redis/redisinsight:latest
+    container_name: redis_insight
+    ports:
+      - 5540:5540
+    networks:
+      - redis_cluster
+    depends_on:
+      - redis_cluster_creator

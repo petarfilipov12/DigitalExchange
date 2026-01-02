@@ -1,0 +1,20 @@
+networks:
+  me_network:
+    external: true
+    driver: bridge
+
+services:
+  ws_server:
+    build: .
+    container_name: ws_server
+    shm_size: "1gb"
+    ports:
+      - 18002:8000
+      - 8980:8080
+    networks:
+      - me_network
+    environment:
+      ME_CLUSTER_ADDRESSES: "me_node0,me_node1,me_node2"
+      ME_CLUSTER_PORT_BASE: "9000"
+
+      

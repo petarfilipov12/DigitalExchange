@@ -1,0 +1,63 @@
+networks:
+  kafka_cluster:
+    driver: bridge
+
+services:
+  kafka_controller_1:
+      build: ./cluster/controllers
+      container_name: kafka_controller_1
+      environment:
+        ADVERTISED_LISTENERS: CONTROLLER://kafka_controller_1:9093
+        NODE_ID: 1
+      networks:
+      - kafka_cluster
+  
+  kafka_broker_1:
+      build: ./cluster/brokers
+      container_name: kafka_broker_1
+      environment:
+        ADVERTISED_LISTENERS: PLAINTEXT://kafka_broker_1:9092
+        NODE_ID: 2
+      networks:
+        - kafka_cluster
+      depends_on:
+        - kafka_controller_1
+  
+  kafka_broker_2:
+      build: ./cluster/brokers
+      container_name: kafka_broker_2
+      environment:
+        ADVERTISED_LISTENERS: PLAINTEXT://kafka_broker_2:9092
+        NODE_ID: 3
+      networks:
+        - kafka_cluster
+      depends_on:
+        - kafka_controller_1
+
+  kafka_producer:
+    build: ./test/producer
+    container_name: kafka_producer
+    networks:
+        - kafka_cluster
+    depends_on:
+        - kafka_broker_1
+    
+  kafka_consumer:
+    build: ./test/consumer
+    container_name: kafka_consumer
+    networks:
+        - kafka_cluster
+    depends_on:
+        - kafka_broker_1
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: kafdrop
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka_broker_1:9092"
+    networks:
+      - kafka_cluster
+    depends_on:
+      - kafka_broker_1

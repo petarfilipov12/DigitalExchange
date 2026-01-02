@@ -1,0 +1,6 @@
+services:
+  aeron_java_md:
+    build: .
+    container_name: aeron_java_md
+      
+      

@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "~/Desktop/Aeron/aeron/aeron-client/src/main/cpp_wrapper",
+                "~/Desktop/Aeron/aeron/aeron-client/src/main/c",
+                "~/Desktop/Aeron/aeron/aeron-archive/src/main/c",
+                "~/Desktop/Aeron/aeron/aeron-archive/src/main/cpp_wrapper"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}

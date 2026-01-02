@@ -1,0 +1,326 @@
+name: Continuous Integration
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - 'release/**'
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - master
+      - 'release/**'
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GRADLE_OPTS: '-Dorg.gradle.daemon=false -Dorg.gradle.java.installations.auto-detect=false -Dorg.gradle.warning.mode=fail'
+  JAVA_VERSION: '17'
+
+permissions:
+  contents: read
+
+jobs:
+  java-build:
+    name: Java ${{ matrix.java }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ '17', '21', '24' ]
+        os: [ 'ubuntu-24.04', 'windows-latest', 'macos-15' ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Setup java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java }}
+      - name: Setup BUILD_JAVA_HOME & BUILD_JAVA_VERSION (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          java -Xinternalversion
+          echo "BUILD_JAVA_HOME=${JAVA_HOME}" >> $GITHUB_ENV
+          echo "BUILD_JAVA_VERSION=${{ matrix.java }}" >> $GITHUB_ENV
+      - name: Setup BUILD_JAVA_HOME & BUILD_JAVA_VERSION (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          java -Xinternalversion
+          echo "BUILD_JAVA_HOME=$env:JAVA_HOME" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "BUILD_JAVA_VERSION=${{ matrix.java }}" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Setup java to run Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build with Gradle
+        run: ./gradlew
+      - name: Copy test logs
+        id: copy_test_logs
+        if: failure()
+        run: |
+          ${{ runner.os == 'Windows' && 'echo "file=build/distributions/test_logs.tbz2" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append' || 'echo "file=build/distributions/test_logs.tbz2" >> $GITHUB_OUTPUT' }}
+          ./gradlew tarTestLogs
+      - name: Upload crash logs
+        if: always() && steps.copy_test_logs.outputs.file == 'build/distributions/test_logs.tbz2'
+        uses: actions/upload-artifact@v4
+        with:
+          name: crash-logs-${{ matrix.os }}-java-${{ matrix.java }}
+          path: ${{ steps.copy_test_logs.outputs.file }}
+
+  csharp-build:
+    name: C# ${{ matrix.dotnet }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        dotnet: [ '8.0.x' ]
+    env:
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Setup java to run Gradle script
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Setup BUILD_JAVA_HOME & BUILD_JAVA_VERSION
+        run: |
+          java -Xinternalversion
+          echo "BUILD_JAVA_HOME=${JAVA_HOME}" >> $GITHUB_ENV
+          echo "BUILD_JAVA_VERSION=${{ env.JAVA_VERSION }}" >> $GITHUB_ENV
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Cache NuGet dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('csharp/**/*.sln') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet }}
+      - name: Build
+        run: ./csharp/build.sh
+      - name: Run tests
+        run: ./csharp/runtests.sh
+      - name: Pack
+        run: ./csharp/pack.sh
+
+  cpp-gcc-2404-build:
+    name: C++ GCC ${{ matrix.version }} (Ubuntu 24.04)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [ '11', '12', '13', '14' ]
+    env:
+      CC: gcc-${{ matrix.version }}
+      CXX: g++-${{ matrix.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Install compiler
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y g++-${{ matrix.version }}
+      - name: Setup java to run Gradle script
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Setup BUILD_JAVA_HOME & BUILD_JAVA_VERSION
+        run: |
+          java -Xinternalversion
+          echo "BUILD_JAVA_HOME=${JAVA_HOME}" >> $GITHUB_ENV
+          echo "BUILD_JAVA_VERSION=${{ env.JAVA_VERSION }}" >> $GITHUB_ENV
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: ./cppbuild/cppbuild
+
+  cpp-clang-2404-build:
+    name: C++ Clang ${{ matrix.version }} (Ubuntu 24.04)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [ '13', '14', '15', '16', '17', '18', '19', '20' ]
+    env:
+      CC: clang-${{ matrix.version }}
+      CXX: clang++-${{ matrix.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Install compiler
+        run: |
+          sudo mkdir -p /etc/apt/keyrings/
+          curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/llvm-snapshot.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/jammy/ llvm-toolchain-jammy-${{ matrix.version }} main" | sudo tee /etc/apt/sources.list.d/llvm.list
+          sudo apt-get update
+          sudo apt-get install -y clang-${{ matrix.version }}
+      - name: Setup java to run Gradle script
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Setup BUILD_JAVA_HOME & BUILD_JAVA_VERSION
+        run: |
+          java -Xinternalversion
+          echo "BUILD_JAVA_HOME=${JAVA_HOME}" >> $GITHUB_ENV
+          echo "BUILD_JAVA_VERSION=${{ env.JAVA_VERSION }}" >> $GITHUB_ENV
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: ./cppbuild/cppbuild
+
+  cpp-clang-macos-build:
+    name: C++ Xcode ${{ matrix.version }} (macOS)
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ 'macos-15' ]
+    env:
+      CC: clang
+      CXX: clang++
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Setup java to run Gradle script
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Setup BUILD_JAVA_HOME & BUILD_JAVA_VERSION
+        run: |
+          java -Xinternalversion
+          echo "BUILD_JAVA_HOME=${JAVA_HOME}" >> $GITHUB_ENV
+          echo "BUILD_JAVA_VERSION=${{ env.JAVA_VERSION }}" >> $GITHUB_ENV
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: cmake --version && ./cppbuild/cppbuild
+
+  cpp-msvc-build:
+    name: C++ MSVC (Windows)
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ 'windows-latest' ]
+    env:
+      CC: cl
+      CXX: cl
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Setup java to run Gradle script
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Setup BUILD_JAVA_HOME & BUILD_JAVA_VERSION
+        run: |
+          java -Xinternalversion
+          echo "BUILD_JAVA_HOME=$env:JAVA_HOME" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "BUILD_JAVA_VERSION=${{ env.JAVA_VERSION }}" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: cppbuild/cppbuild.cmd
+
+  rust-build:
+    name: Rust ${{ matrix.rust }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [ stable, beta, nightly ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+      - name: Setup java to run Gradle script
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Setup BUILD_JAVA_HOME & BUILD_JAVA_VERSION
+        run: |
+          java -Xinternalversion
+          echo "BUILD_JAVA_HOME=${JAVA_HOME}" >> $GITHUB_ENV
+          echo "BUILD_JAVA_VERSION=${{ env.JAVA_VERSION }}" >> $GITHUB_ENV
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew runRustTests
+
+  golang-build:
+    name: Golang ${{ matrix.version }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [ '1.23.x', '1.24.x' ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.version }}
+      - name: Setup java to run Gradle script
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Setup BUILD_JAVA_HOME & BUILD_JAVA_VERSION
+        run: |
+          java -Xinternalversion
+          echo "BUILD_JAVA_HOME=${JAVA_HOME}" >> $GITHUB_ENV
+          echo "BUILD_JAVA_VERSION=${{ env.JAVA_VERSION }}" >> $GITHUB_ENV
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Generate jar
+        run: ./gradlew assemble
+      - name: Run tests
+        run: cd gocode && make

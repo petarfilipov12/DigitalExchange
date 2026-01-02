@@ -1,0 +1,6 @@
+services:
+  aeron_archive_c_md:
+    build: .
+    container_name: aeron_archive_c_md
+    shm_size: '1gb'
+      

@@ -1,0 +1,11 @@
+services:
+  frontend:
+    build: .
+    container_name: frontend
+    ports:
+      - 3000:3000
+    environment:
+      NEXT_PUBLIC_WS_ENDPOINT: ws://localhost:8980
+      NEXT_PUBLIC_REST_MARKETDATA_ENDPOINT: http://localhost:8889
+      NEXT_PUBLIC_REST_INGRESS_ENDPOINT: http://localhost:8888
+      

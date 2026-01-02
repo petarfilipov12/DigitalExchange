@@ -1,0 +1,22 @@
+networks:
+  redis_network:
+    external: true
+    driver: bridge
+
+services:
+  redis_node:
+    image: redis:8.2.0
+    container_name: redis_node
+    command: ["redis-server"]
+    networks:
+      - redis_network
+  
+  redis_ui:
+    image: redis/redisinsight:latest
+    container_name: redis_insight
+    ports:
+      - 5540:5540
+    networks:
+      - redis_network
+    depends_on:
+      - redis_node

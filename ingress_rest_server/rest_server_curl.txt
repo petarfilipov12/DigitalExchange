@@ -1,0 +1,34 @@
+curl -X POST http://localhost:8888/add_order \
+	-H "Content-Type: application/json" \
+	-d '{"base": "BTC", "quote": "USDC", "accountId": 1, "orderSide": "BUY", "orderType": "LIMIT", "price": 100, "qty": 1}'
+	
+	
+curl -X POST http://localhost:8888/cancel_order \
+	-H "Content-Type: application/json" \
+	-d '{"base": "BTC", "quote": "USDC", "accountId": 1, "orderId": 100}'
+
+
+curl -X POST http://localhost:8888/add_account \
+	-H "Content-Type: application/json" \
+	-d '{"accountId": 1}'
+
+
+curl -X POST http://localhost:8888/remove_account \
+	-H "Content-Type: application/json" \
+	-d '{"accountId": 1}'
+	
+curl -X POST http://localhost:8888/add_pair \
+	-H "Content-Type: application/json" \
+	-d '{"base": "BTC", "quote": "USDC"}'
+
+curl -X POST http://localhost:8888/remove_pair \
+	-H "Content-Type: application/json" \
+	-d '{"base": "BTC", "quote": "USDC"}'
+	
+curl -X POST http://localhost:8888/deposit \
+	-H "Content-Type: application/json" \
+	-d '{"accountId": 1, "symbol": "USDC", "qty": 100}'
+	
+curl -X POST http://localhost:8888/withdraw \
+	-H "Content-Type: application/json" \
+	-d '{"accountId": 1, "symbol": "USDC", "qty": 100}'

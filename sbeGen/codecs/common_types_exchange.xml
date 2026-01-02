@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <types>
+      <type name="SymbolString" primitiveType="char" length="4" characterEncoding="US-ASCII" description="ASCII 4 letter symbol"/>
+      <enum name="BooleanType" encodingType="int32">
+          <validValue name="FALSE">0</validValue>
+          <validValue name="TRUE">1</validValue>
+      </enum>
+      <enum name="SbeOrderSide" encodingType="int32">
+          <validValue name="ORDER_SIDE_BUY">0</validValue>
+          <validValue name="ORDER_SIDE_SELL">1</validValue>
+          <validValue name="ORDER_SIDE_INVALID">2</validValue>
+      </enum>
+      <enum name="SbeOrderType" encodingType="int32">
+          <validValue name="ORDER_TYPE_MARKET">0</validValue>
+          <validValue name="ORDER_TYPE_LIMIT">1</validValue>
+          <validValue name="ORDER_TYPE_INVALID">2</validValue>
+      </enum>
+      <composite name="order" description="Order description">
+          <type name="orderId" primitiveType="int64"/>
+          <type name="accountId" primitiveType="int64"/>
+          <ref name="base" type="SymbolString"/>
+          <ref name="quote" type="SymbolString"/>
+          <type name="price" primitiveType="int64"/>
+          <type name="qty" primitiveType="int64"/>
+          <type name="filled" primitiveType="int64"/>
+          <ref name="orderSide" type="SbeOrderSide"/>
+          <ref name="orderType" type="SbeOrderType"/>
+      </composite>
+  </types>
+    
+

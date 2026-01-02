@@ -1,0 +1,28 @@
+networks:
+  postgreSQL_network:
+    external: true
+    driver: bridge
+
+services:
+  postgres_node:
+    image: postgres:latest
+    container_name: postgres_node
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: marketdatadb
+    networks:
+      - postgreSQL_network
+  
+  postgres_ui:
+    image: dpage/pgadmin4:latest
+    container_name: postgres_ui
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    ports:
+      - 5050:80
+    networks:
+      - postgreSQL_network
+    depends_on:
+      - postgres_node
